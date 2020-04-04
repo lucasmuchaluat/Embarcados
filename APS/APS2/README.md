@@ -5,5 +5,5 @@ APS2 Embarcados
 Repositório para entrega da APS2 de embarcados
 
 ## Design Interface
-![interface](/designAPS2.png)
+![](Embarcados/APS/APS2/designAPS2.png)
 - Todos os icones usados foram retirados da plataforma MarvelApp
