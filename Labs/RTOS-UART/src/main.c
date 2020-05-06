@@ -446,7 +446,8 @@ int main(void)
     pio_set_output(LED3_OLED_PIO, LED3_OLED_IDX_MASK, 0, 0, 0);
 
     /* Initialize the console uart */
-    configure_console();
+    //configure_console();
+	USART1_init();
 
     /* Output demo information. */
     printf("-- Freertos Example --\n\r");
