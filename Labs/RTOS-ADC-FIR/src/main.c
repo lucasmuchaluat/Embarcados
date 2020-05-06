@@ -17,56 +17,58 @@
 /************************************************************************/
 /* FILTRO                                                                 */
 /************************************************************************/
-#define NUM_TAPS   12  // ordem do filtro (quantos coefientes)
-#define BLOCK_SIZE 1   // se será processado por blocos, no caso não.
+#define NUM_TAPS 12  // ordem do filtro (quantos coefientes)
+#define BLOCK_SIZE 1 // se será processado por blocos, no caso não.
 
 // filtro de ordem 8
 // const float32_t firCoeffs32[NUM_TAPS] ={0.12269166637219883,
-	// 0.12466396327768503,
-	// 0.1259892807712678,
-	// 0.12665508957884833,
-	// 0.12665508957884833,
-	// 0.1259892807712678,
-	// 0.12466396327768503,
+// 	0.12466396327768503,
+// 	0.1259892807712678,
+// 	0.12665508957884833,
+// 	0.12665508957884833,
+// 	0.1259892807712678,
+// 	0.12466396327768503,
 // 0.12269166637219883};
 
 //filtro de ordem 12
-const float32_t firCoeffs32[NUM_TAPS] ={
-	0.07930125683894955,
-	0.08147535648783032,
-	0.08323976516671625,
-	0.08457786363832452,
-	0.08547702101550535,
-	0.085928736852674,
-	0.085928736852674,
-	0.08547702101550535,
-	0.08457786363832452,
-	0.08323976516671625,
-	0.08147535648783032,
-	0.07930125683894955
-};
+const float32_t firCoeffs32[NUM_TAPS] = {
+    0.07930125683894955,
+    0.08147535648783032,
+    0.08323976516671625,
+    0.08457786363832452,
+    0.08547702101550535,
+    0.085928736852674,
+    0.085928736852674,
+    0.08547702101550535,
+    0.08457786363832452,
+    0.08323976516671625,
+    0.08147535648783032,
+    0.07930125683894955};
 
 /************************************************************************/
 /* RTOS                                                                  */
 /************************************************************************/
-#define TASK_MXT_STACK_SIZE            (2*1024/sizeof(portSTACK_TYPE))
-#define TASK_MXT_STACK_PRIORITY        (tskIDLE_PRIORITY)
+#define TASK_MXT_STACK_SIZE (2 * 1024 / sizeof(portSTACK_TYPE))
+#define TASK_MXT_STACK_PRIORITY (tskIDLE_PRIORITY)
 
-#define TASK_LCD_STACK_SIZE            (6*1024/sizeof(portSTACK_TYPE))
-#define TASK_LCD_STACK_PRIORITY        (tskIDLE_PRIORITY)
+#define TASK_LCD_STACK_SIZE (6 * 1024 / sizeof(portSTACK_TYPE))
+#define TASK_LCD_STACK_PRIORITY (tskIDLE_PRIORITY)
 
-typedef struct {
+typedef struct
+{
   uint x;
   uint y;
 } touchData;
 
 QueueHandle_t xQueueTouch;
 
-typedef struct {
+typedef struct
+{
   uint value;
 } adcData;
 
-typedef struct {
+typedef struct
+{
   uint raw;
   uint filtrado;
 } t_plot;
@@ -76,7 +78,7 @@ QueueHandle_t xQueueADC, xQueuePlot;
 /************************************************************************/
 /* LCD + TOUCH                                                          */
 /************************************************************************/
-#define MAX_ENTRIES        3
+#define MAX_ENTRIES 3
 
 struct ili9488_opt_t g_ili9488_display_opt;
 
@@ -92,8 +94,8 @@ volatile uint32_t g_ul_value = 0;
 
 volatile uint32_t g_ul_dac = 0;
 
-
-void TC1_Handler(void){
+void TC1_Handler(void)
+{
   volatile uint32_t ul_dummy;
 
   ul_dummy = tc_get_status(TC0, 1);
@@ -106,14 +108,16 @@ void TC1_Handler(void){
   afec_start_software_conversion(AFEC_POT);
 }
 
-static void AFEC_pot_Callback(void){
+static void AFEC_pot_Callback(void)
+{
   adcData adc;
   adc.value = afec_channel_get_value(AFEC_POT, AFEC_POT_CHANNEL);
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   xQueueSendFromISR(xQueueADC, &adc, &xHigherPriorityTaskWoken);
 }
 
-static void config_AFEC_pot(Afec *afec, uint32_t afec_id, uint32_t afec_channel, afec_callback_t callback){
+static void config_AFEC_pot(Afec *afec, uint32_t afec_id, uint32_t afec_channel, afec_callback_t callback)
+{
   /*************************************
   * Ativa e configura AFEC
   *************************************/
@@ -150,9 +154,9 @@ static void config_AFEC_pot(Afec *afec, uint32_t afec_id, uint32_t afec_channel,
 
   afec_temp_sensor_get_config_defaults(&afec_temp_sensor_cfg);
   afec_temp_sensor_set_config(afec, &afec_temp_sensor_cfg);
-  
+
   /* configura IRQ */
-  afec_set_callback(afec, afec_channel,	callback, 1);
+  afec_set_callback(afec, afec_channel, callback, 1);
   NVIC_SetPriority(afec_id, 4);
   NVIC_EnableIRQ(afec_id);
 }
@@ -165,13 +169,14 @@ static void config_AFEC_pot(Afec *afec, uint32_t afec_id, uint32_t afec_channel,
 * \brief Called if stack overflow during execution
 */
 extern void vApplicationStackOverflowHook(xTaskHandle *pxTask,
-signed char *pcTaskName)
+                                          signed char *pcTaskName)
 {
   printf("stack overflow %x %s\r\n", pxTask, (portCHAR *)pcTaskName);
   /* If the parameters have been corrupted then inspect pxCurrentTCB to
   * identify which task has overflowed its stack.
   */
-  for (;;) {
+  for (;;)
+  {
   }
 }
 
@@ -198,14 +203,15 @@ extern void vApplicationMallocFailedHook(void)
   configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h. */
 
   /* Force an assert. */
-  configASSERT( ( volatile void * ) NULL );
+  configASSERT((volatile void *)NULL);
 }
 
 /************************************************************************/
 /* init                                                                 */
 /************************************************************************/
 
-static void configure_lcd(void){
+static void configure_lcd(void)
+{
   /* Initialize display parameter */
   g_ili9488_display_opt.ul_width = ILI9488_LCD_WIDTH;
   g_ili9488_display_opt.ul_height = ILI9488_LCD_HEIGHT;
@@ -221,29 +227,35 @@ static void configure_lcd(void){
 /* funcoes                                                              */
 /************************************************************************/
 
-void draw_screen(void) {
+void draw_screen(void)
+{
   ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
-  ili9488_draw_filled_rectangle(0, 0, ILI9488_LCD_WIDTH-1, ILI9488_LCD_HEIGHT-1);
+  ili9488_draw_filled_rectangle(0, 0, ILI9488_LCD_WIDTH - 1, ILI9488_LCD_HEIGHT - 1);
 }
 
-uint32_t convert_axis_system_x(uint32_t touch_y) {
+uint32_t convert_axis_system_x(uint32_t touch_y)
+{
   // entrada: 4096 - 0 (sistema de coordenadas atual)
   // saida: 0 - 320
-  return ILI9488_LCD_WIDTH - ILI9488_LCD_WIDTH*touch_y/4096;
+  return ILI9488_LCD_WIDTH - ILI9488_LCD_WIDTH * touch_y / 4096;
 }
 
-uint32_t convert_axis_system_y(uint32_t touch_x) {
+uint32_t convert_axis_system_y(uint32_t touch_x)
+{
   // entrada: 0 - 4096 (sistema de coordenadas atual)
   // saida: 0 - 320
-  return ILI9488_LCD_HEIGHT*touch_x/4096;
+  return ILI9488_LCD_HEIGHT * touch_x / 4096;
 }
 
-void font_draw_text(tFont *font, const char *text, int x, int y, int spacing) {
+void font_draw_text(tFont *font, const char *text, int x, int y, int spacing)
+{
   char *p = text;
-  while(*p != NULL) {
+  while (*p != NULL)
+  {
     char letter = *p;
     int letter_offset = letter - font->start_char;
-    if(letter <= font->end_char) {
+    if (letter <= font->end_char)
+    {
       tChar *current_char = font->chars + letter_offset;
       ili9488_draw_pixmap(x, y, current_char->image->width, current_char->image->height, current_char->image->data);
       x += current_char->image->width + spacing;
@@ -259,28 +271,31 @@ void mxt_handler(struct mxt_device *device, uint *x, uint *y)
 
   /* Temporary touch event data struct */
   struct mxt_touch_event touch_event;
-  
+
   /* first touch only */
   uint first = 0;
 
   /* Collect touch events and put the data in a string,
   * maximum 2 events at the time */
-  do {
+  do
+  {
 
     /* Read next next touch event in the queue, discard if read fails */
-    if (mxt_read_touch_event(device, &touch_event) != STATUS_OK) {
+    if (mxt_read_touch_event(device, &touch_event) != STATUS_OK)
+    {
       continue;
     }
-    
+
     /************************************************************************/
     /* Envia dados via fila RTOS                                            */
     /************************************************************************/
-    if(first == 0 ){
+    if (first == 0)
+    {
       *x = convert_axis_system_x(touch_event.y);
       *y = convert_axis_system_y(touch_event.x);
       first = 1;
     }
-    
+
     i++;
 
     /* Check if there is still messages in the queue and
@@ -288,7 +303,8 @@ void mxt_handler(struct mxt_device *device, uint *x, uint *y)
   } while ((mxt_is_message_pending(device)) & (i < MAX_ENTRIES));
 }
 
-void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
+void TC_init(Tc *TC, int ID_TC, int TC_CHANNEL, int freq)
+{
   uint32_t ul_div;
   uint32_t ul_tcclks;
   uint32_t ul_sysclk = sysclk_get_cpu_hz();
@@ -299,8 +315,8 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
   tc_init(TC, TC_CHANNEL, ul_tcclks | TC_CMR_CPCTRG);
   tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq);
 
-  NVIC_SetPriority((IRQn_Type) ID_TC, 4);
-  NVIC_EnableIRQ((IRQn_Type) ID_TC);
+  NVIC_SetPriority((IRQn_Type)ID_TC, 4);
+  NVIC_EnableIRQ((IRQn_Type)ID_TC);
   tc_enable_interrupt(TC, TC_CHANNEL, TC_IER_CPCS);
 
   tc_start(TC, TC_CHANNEL);
@@ -310,26 +326,30 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
 /* tasks                                                                */
 /************************************************************************/
 
-void task_mxt(void){
-  
+void task_mxt(void)
+{
+
   struct mxt_device device; /* Device data container */
-  mxt_init(&device);       	/* Initialize the mXT touch device */
+  mxt_init(&device);        /* Initialize the mXT touch device */
   touchData touch;          /* touch queue data type*/
-  
-  while (true) {
+
+  while (true)
+  {
     /* Check for any pending messages and run message handler if any
     * message is found in the queue */
-    if (mxt_is_message_pending(&device)) {
+    if (mxt_is_message_pending(&device))
+    {
       mxt_handler(&device, &touch.x, &touch.y);
-      xQueueSend( xQueueTouch, &touch, 0);           /* send mesage to queue */
+      xQueueSend(xQueueTouch, &touch, 0); /* send mesage to queue */
     }
     vTaskDelay(100);
   }
 }
 
-void task_lcd(void){
-  xQueueTouch = xQueueCreate( 10, sizeof( touchData ) );
-  xQueuePlot = xQueueCreate( 10, sizeof( t_plot ) );
+void task_lcd(void)
+{
+  xQueueTouch = xQueueCreate(10, sizeof(touchData));
+  xQueuePlot = xQueueCreate(10, sizeof(t_plot));
 
   // inicializa LCD e pinta de branco
   configure_lcd();
@@ -338,112 +358,123 @@ void task_lcd(void){
   // strut local para armazenar msg enviada pela task do mxt
   touchData touch;
   t_plot plot;
-  
+
   char buffer[64];
   int x = 0;
 
-  while (true) {
-    if (xQueueReceive( xQueueTouch, &(touch), ( TickType_t )  0 / portTICK_PERIOD_MS)) {
+  while (true)
+  {
+    if (xQueueReceive(xQueueTouch, &(touch), (TickType_t)0 / portTICK_PERIOD_MS))
+    {
       //printf("Touch em: x:%d y:%d\n", touch.x, touch.y);
     }
-    
-    if (xQueueReceive( xQueuePlot, &(plot), ( TickType_t )  100 / portTICK_PERIOD_MS)) {     
-      if(x <= ILI9488_LCD_WIDTH){
-	      x = x + 5;
-		  //plot_raw
-	      ili9488_set_foreground_color(COLOR_CONVERT(COLOR_BLACK));
-	      ili9488_draw_filled_circle(x, ILI9488_LCD_HEIGHT - plot.raw / 16, 2 );
-		  //plot_filtrado
-		  ili9488_set_foreground_color(COLOR_CONVERT(COLOR_RED));
-		  ili9488_draw_filled_circle(x, ILI9488_LCD_HEIGHT - plot.filtrado / 16, 2 );
-	  }else{
-		  x = 0;
-		  draw_screen();
-	  }
-      printf("%d\n",plot.raw); //printa no terminal o valor de plo.raw
 
+    if (xQueueReceive(xQueuePlot, &(plot), (TickType_t)100 / portTICK_PERIOD_MS))
+    {
+      if (x <= ILI9488_LCD_WIDTH)
+      {
+        x = x + 5;
+        //plot_raw
+        ili9488_set_foreground_color(COLOR_CONVERT(COLOR_BLACK));
+        ili9488_draw_filled_circle(x, ILI9488_LCD_HEIGHT - plot.raw / 16, 2);
+        //plot_filtrado
+        ili9488_set_foreground_color(COLOR_CONVERT(COLOR_RED));
+        ili9488_draw_filled_circle(x, ILI9488_LCD_HEIGHT - plot.filtrado / 16, 2);
+      }
+      else
+      {
+        x = 0;
+        draw_screen();
+      }
+      printf("%d\n", plot.raw); //printa no terminal o valor de plo.raw
     }
-  }    
-}
-
- void task_adc(void){
-
-    adcData adc;
-    t_plot plot;
-
-    xQueueADC  = xQueueCreate( 200, sizeof( adcData ) );
-        
-    // configura ADC e TC para controlar a leitura
-    config_AFEC_pot(AFEC_POT, AFEC_POT_ID, AFEC_POT_CHANNEL, AFEC_pot_Callback);
-    TC_init(TC0, ID_TC1, 1, 100);
-	
-	/* Cria buffers para filtragem e faz a inicializacao do filtro. */
-	float32_t firStateF32[BLOCK_SIZE + NUM_TAPS - 1];
-	float32_t inputF32[BLOCK_SIZE + NUM_TAPS - 1];
-	float32_t outputF32[BLOCK_SIZE + NUM_TAPS - 1];
-	arm_fir_instance_f32 S;
-	arm_fir_init_f32(&S, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], BLOCK_SIZE);
-	
-	int i = 0;
-	
-    while(1){
-		
-		if (xQueueReceive( xQueueADC, &(adc), 100)) {
-			if(i <= NUM_TAPS){
-				inputF32[i++] = (float) adc.value;
-				} else{
-				arm_fir_f32(&S, &inputF32[0], &outputF32[0], BLOCK_SIZE);
-				plot.raw = (int) inputF32[0];
-				plot.filtrado = (int) outputF32[0];
-				xQueueSend(xQueuePlot, &plot, 0);
-				i = 0;
-			}
-		}
-	}
-}
-
-  /************************************************************************/
-  /* main                                                                 */
-  /************************************************************************/
-
-  int main(void)
-  {
-    /* Initialize the USART configuration struct */
-    const usart_serial_options_t usart_serial_options = {
-      .baudrate     = USART_SERIAL_EXAMPLE_BAUDRATE,
-      .charlength   = USART_SERIAL_CHAR_LENGTH,
-      .paritytype   = USART_SERIAL_PARITY,
-      .stopbits     = USART_SERIAL_STOP_BIT
-    };
-
-    sysclk_init(); /* Initialize system clocks */
-    board_init();  /* Initialize board */
-    
-    /* Initialize stdio on USART */
-    stdio_serial_init(USART_SERIAL_EXAMPLE, &usart_serial_options);
-    
-    /* Create task to handler touch */
-    if (xTaskCreate(task_mxt, "mxt", TASK_MXT_STACK_SIZE, NULL, TASK_MXT_STACK_PRIORITY, NULL) != pdPASS) {
-      printf("Failed to create test led task\r\n");
-    }
-    
-    /* Create task to handler LCD */
-    if (xTaskCreate(task_lcd, "lcd", TASK_LCD_STACK_SIZE, NULL, TASK_LCD_STACK_PRIORITY, NULL) != pdPASS) {
-      printf("Failed to create test led task\r\n");
-    }
-    
-    if (xTaskCreate(task_adc, "adc", TASK_LCD_STACK_SIZE, NULL, 0, NULL) != pdPASS) {
-      printf("Failed to create test adc task\r\n");
-    }
-    
-    /* Start the scheduler. */
-    vTaskStartScheduler();
-
-    while(1){
-
-    }
-
-
-    return 0;
   }
- 
+}
+
+void task_adc(void)
+{
+
+  adcData adc;
+  t_plot plot;
+
+  xQueueADC = xQueueCreate(200, sizeof(adcData));
+
+  // configura ADC e TC para controlar a leitura
+  config_AFEC_pot(AFEC_POT, AFEC_POT_ID, AFEC_POT_CHANNEL, AFEC_pot_Callback);
+  TC_init(TC0, ID_TC1, 1, 100);
+
+  /* Cria buffers para filtragem e faz a inicializacao do filtro. */
+  float32_t firStateF32[BLOCK_SIZE + NUM_TAPS - 1];
+  float32_t inputF32[BLOCK_SIZE + NUM_TAPS - 1];
+  float32_t outputF32[BLOCK_SIZE + NUM_TAPS - 1];
+  arm_fir_instance_f32 S;
+  arm_fir_init_f32(&S, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], BLOCK_SIZE);
+
+  int i = 0;
+
+  while (1)
+  {
+
+    if (xQueueReceive(xQueueADC, &(adc), 100))
+    {
+      if (i <= NUM_TAPS)
+      {
+        inputF32[i++] = (float)adc.value;
+      }
+      else
+      {
+        arm_fir_f32(&S, &inputF32[0], &outputF32[0], BLOCK_SIZE);
+        plot.raw = (int)inputF32[0];
+        plot.filtrado = (int)outputF32[0];
+        xQueueSend(xQueuePlot, &plot, 0);
+        i = 0;
+      }
+    }
+  }
+}
+
+/************************************************************************/
+/* main                                                                 */
+/************************************************************************/
+
+int main(void)
+{
+  /* Initialize the USART configuration struct */
+  const usart_serial_options_t usart_serial_options = {
+      .baudrate = USART_SERIAL_EXAMPLE_BAUDRATE,
+      .charlength = USART_SERIAL_CHAR_LENGTH,
+      .paritytype = USART_SERIAL_PARITY,
+      .stopbits = USART_SERIAL_STOP_BIT};
+
+  sysclk_init(); /* Initialize system clocks */
+  board_init();  /* Initialize board */
+
+  /* Initialize stdio on USART */
+  stdio_serial_init(USART_SERIAL_EXAMPLE, &usart_serial_options);
+
+  /* Create task to handler touch */
+  if (xTaskCreate(task_mxt, "mxt", TASK_MXT_STACK_SIZE, NULL, TASK_MXT_STACK_PRIORITY, NULL) != pdPASS)
+  {
+    printf("Failed to create test led task\r\n");
+  }
+
+  /* Create task to handler LCD */
+  if (xTaskCreate(task_lcd, "lcd", TASK_LCD_STACK_SIZE, NULL, TASK_LCD_STACK_PRIORITY, NULL) != pdPASS)
+  {
+    printf("Failed to create test led task\r\n");
+  }
+
+  if (xTaskCreate(task_adc, "adc", TASK_LCD_STACK_SIZE, NULL, 0, NULL) != pdPASS)
+  {
+    printf("Failed to create test adc task\r\n");
+  }
+
+  /* Start the scheduler. */
+  vTaskStartScheduler();
+
+  while (1)
+  {
+  }
+
+  return 0;
+}
